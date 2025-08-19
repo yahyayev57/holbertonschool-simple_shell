@@ -6,6 +6,25 @@
 
 extern char **environ;
 
+char *trim_spaces(char *str)
+{
+    char *end;
+
+    while (*str == ' ' || *str == '\t')
+        str++;
+
+    if (*str == 0)
+        return str;
+
+    end = str + strlen(str) - 1;
+    while (end > str && (*end == ' ' || *end == '\t' || *end == '\n'))
+        end--;
+
+    *(end + 1) = '\0';
+
+    return str;
+}
+
 int main(void)
 {
     char *line = NULL;
@@ -13,6 +32,7 @@ int main(void)
     ssize_t read;
     pid_t pid;
     char *args[2];
+    char *cmd;
 
     while (1)
     {
@@ -27,13 +47,12 @@ int main(void)
             break;
         }
 
-        if (line[read - 1] == '\n')
-            line[read - 1] = '\0';
+        cmd = trim_spaces(line);
 
-        if (line[0] == '\0')
+        if (cmd[0] == '\0')
             continue;
 
-        args[0] = line;
+        args[0] = cmd;
         args[1] = NULL;
 
         pid = fork();
