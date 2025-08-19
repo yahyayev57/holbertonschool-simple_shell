@@ -4,6 +4,8 @@
 #include <string.h>
 #include <sys/wait.h>
 
+extern char **environ;
+
 /**
  * main - Entry point for simple shell 0.1
  *
