@@ -41,10 +41,9 @@ char *_strdup(const char *str)
  */
 char *find_command_in_path(char *command)
 {
-    char *path_env, *path_env_dup, *dir;
+    char *path_env, *path_env_dup, *token;
     char *full_path;
     int len_dir, len_cmd;
-    char *token;
 
     if (command == NULL)
         return NULL;
