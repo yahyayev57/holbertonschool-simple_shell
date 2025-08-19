@@ -1,63 +1,66 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
+#include <string.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT 1024
 #define MAX_ARGS 64
 
 int main(void)
 {
-    char input[MAX_INPUT];
-    char *args[MAX_ARGS];
-    char *token;
-    pid_t pid;
-    int status;
-    int i;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
 
     while (1)
     {
         printf("#cisfun$ ");
-        if (fgets(input, MAX_INPUT, stdin) == NULL)
+        fflush(stdout);
+
+        nread = getline(&line, &len, stdin);
+        if (nread == -1)
         {
-            printf("\n");
+            perror("getline");
             break;
         }
 
-        input[strcspn(input, "\n")] = '\0';  /* Remove newline */
+        if (line[nread - 1] == '\n')
+            line[nread - 1] = '\0';
 
-        i = 0;
-        token = strtok(input, " \t");
+        char *argv[MAX_ARGS];
+        int i = 0;
+        char *token = strtok(line, " ");
+
         while (token != NULL && i < MAX_ARGS - 1)
         {
-            args[i] = token;
-            i++;
-            token = strtok(NULL, " \t");
+            argv[i++] = token;
+            token = strtok(NULL, " ");
         }
-        args[i] = NULL;
+        argv[i] = NULL;
 
-        if (args[0] == NULL)
+        if (argv[0] == NULL)
             continue;
 
-        pid = fork();
+        pid_t pid = fork();
+
         if (pid == -1)
         {
             perror("fork");
             continue;
         }
-        if (pid == 0)
+        else if (pid == 0)
         {
-            execvp(args[0], args);
-            perror("execvp");
+            execve(argv[0], argv, NULL);
+            perror("execve");
             exit(EXIT_FAILURE);
         }
         else
         {
+            int status;
             wait(&status);
         }
     }
 
+    free(line);
     return 0;
 }
