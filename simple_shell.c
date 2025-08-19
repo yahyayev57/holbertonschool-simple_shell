@@ -1,66 +1,58 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
-#define MAX_CMD_LEN 1024
-#define MAX_ARGS 100
+#define MAX_ARGS 64
 
-/**
- * main - simple shell
- *
- * Return: Always 0
- */
 int main(void)
 {
-	char cmd[MAX_CMD_LEN];
+	char *line = NULL;
+	size_t len = 0;
 	char *argv[MAX_ARGS];
+	int i;
+	ssize_t read;
 	pid_t pid;
-	int status, i;
+	int status;
+	char *token;
 
 	while (1)
 	{
-		write(STDOUT_FILENO, "#cisfun$ ", 9);
+		if (isatty(STDIN_FILENO))
+			write(STDOUT_FILENO, "#cisfun$ ", 9);
 
-		if (fgets(cmd, sizeof(cmd), stdin) == NULL)
-		{
-			write(STDOUT_FILENO, "\n", 1);
+		read = getline(&line, &len, stdin);
+		if (read == -1)
 			break;
-		}
 
-		/* Remove newline character */
-		cmd[strcspn(cmd, "\n")] = '\0';
+		if (line[read - 1] == '\n')
+			line[read - 1] = '\0';
 
-		/* Tokenize command */
 		i = 0;
-		argv[i] = strtok(cmd, " ");
-		while (argv[i] != NULL && i < MAX_ARGS - 1)
+		token = strtok(line, " ");
+		while (token != NULL && i < MAX_ARGS - 1)
 		{
-			i++;
-			argv[i] = strtok(NULL, " ");
+			argv[i++] = token;
+			token = strtok(NULL, " ");
 		}
 		argv[i] = NULL;
 
-		/* Skip empty input */
 		if (argv[0] == NULL)
 			continue;
 
 		pid = fork();
 		if (pid == 0)
 		{
-			/* Child process */
 			if (execve(argv[0], argv, NULL) == -1)
-			{
 				perror("execve");
-				exit(EXIT_FAILURE);
-			}
+			exit(EXIT_FAILURE);
 		}
 		else if (pid > 0)
 		{
-			/* Parent process */
-			wait(&status);
+			waitpid(pid, &status, 0);
 		}
 		else
 		{
@@ -68,5 +60,6 @@ int main(void)
 		}
 	}
 
-	return (0);
+	free(line);
+	return 0;
 }
