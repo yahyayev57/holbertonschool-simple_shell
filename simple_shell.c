@@ -1,69 +1,71 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 
-extern char **environ;
+#define BUFFER_SIZE 1024
+#define DELIM " \t\r\n\a"
 
 /**
- * main - Entry point for simple shell 0.1
- *
- * Return: Always 0 (Success)
+ * main - Entry point for a simple shell.
+ * Return: 0 on success.
  */
 int main(void)
 {
 	char *line = NULL;
 	size_t len = 0;
-	ssize_t read;
+	ssize_t nread;
+	char *token;
+	char *argv[BUFFER_SIZE];
 	pid_t pid;
-	char *args[2];
-	int is_interactive = isatty(STDIN_FILENO);
+	int status;
+	int i;
 
 	while (1)
 	{
-		if (is_interactive)
-			printf("#cisfun$ ");
+		if (isatty(STDIN_FILENO))
+			write(STDOUT_FILENO, "#cisfun$ ", 9);
 
-		read = getline(&line, &len, stdin);
-		if (read == -1)
-		{
-			if (is_interactive)
-				printf("\n");
+		nread = getline(&line, &len, stdin);
+		if (nread == -1)
 			break;
-		}
 
-		if (line[read - 1] == '\n')
-			line[read - 1] = '\0';
-
-		if (line[0] == '\0')
-			continue;
-
-		args[0] = line;
-		args[1] = NULL;
-
-		pid = fork();
-		if (pid == -1)
+		token = strtok(line, "\n");
+		while (token != NULL)
 		{
-			perror("fork");
-			free(line);
-			exit(EXIT_FAILURE);
-		}
+			char *subtoken = strtok(token, DELIM);
+			i = 0;
 
-		if (pid == 0)
-		{
-			if (execve(args[0], args, environ) == -1)
+			while (subtoken != NULL && i < BUFFER_SIZE - 1)
 			{
-				perror("./hsh");
-				exit(EXIT_FAILURE);
+				argv[i++] = subtoken;
+				subtoken = strtok(NULL, DELIM);
 			}
-		}
-		else
-		{
-			wait(NULL);
+			argv[i] = NULL;
+
+			if (argv[0] != NULL)
+			{
+				pid = fork();
+				if (pid == 0)
+				{
+					if (execvp(argv[0], argv) == -1)
+						perror(argv[0]);
+					exit(EXIT_FAILURE);
+				}
+				else if (pid < 0)
+				{
+					perror("fork");
+				}
+				else
+				{
+					wait(&status);
+				}
+			}
+			token = strtok(NULL, "\n");
 		}
 	}
-
 	free(line);
 	return (0);
 }
