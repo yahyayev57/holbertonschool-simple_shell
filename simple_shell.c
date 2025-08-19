@@ -18,14 +18,18 @@ int main(void)
 	ssize_t read;
 	pid_t pid;
 	char *args[2];
+	int is_interactive = isatty(STDIN_FILENO);
 
 	while (1)
 	{
-		printf("#cisfun$ ");
+		if (is_interactive)
+			printf("#cisfun$ ");
+
 		read = getline(&line, &len, stdin);
 		if (read == -1)
 		{
-			printf("\n");
+			if (is_interactive)
+				printf("\n");
 			break;
 		}
 
