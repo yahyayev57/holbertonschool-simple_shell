@@ -1,0 +1,10 @@
+.TH simple_shell 1 "August 2025" "Version 1.0" "User Commands"
+.SH NAME
+simple_shell \- simple shell program
+.SH SYNOPSIS
+simple_shell
+.SH DESCRIPTION
+simple_shell lets you run commands on Linux.  
+You can type commands or use files with commands.
+.SH AUTHOR
+Kenan
