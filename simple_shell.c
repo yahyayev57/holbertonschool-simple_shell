@@ -4,14 +4,10 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-/* Max args count */
+extern char **environ;  /* Add this declaration */
+
 #define MAX_ARGS 64
 
-/**
- * find_command_in_path - Find full path of command in PATH
- * @cmd: Command name (like "ls")
- * Return: full path string or NULL if not found
- */
 char *find_command_in_path(char *cmd)
 {
     char *path_env, *path_copy, *dir;
@@ -20,7 +16,6 @@ char *find_command_in_path(char *cmd)
     if (cmd == NULL)
         return NULL;
 
-    /* If cmd contains '/', treat as path */
     if (strchr(cmd, '/'))
     {
         if (access(cmd, X_OK) == 0)
@@ -61,33 +56,28 @@ int main(void)
     int i;
     pid_t pid;
     int status;
+    int interactive;
 
-    /* Check if shell is interactive */
-    int interactive = isatty(STDIN_FILENO);
+    interactive = isatty(STDIN_FILENO);
 
     while (1)
     {
-        /* Print prompt if interactive */
         if (interactive)
             write(STDOUT_FILENO, "$ ", 2);
 
         nread = getline(&line, &len, stdin);
         if (nread == -1)
         {
-            /* EOF or error */
             if (interactive)
                 write(STDOUT_FILENO, "\n", 1);
             break;
         }
 
-        /* Remove trailing newline */
         line[strcspn(line, "\n")] = '\0';
 
-        /* Skip empty lines */
         if (line[0] == '\0')
             continue;
 
-        /* Parse input into argv */
         i = 0;
         argv[i] = strtok(line, " \t");
         while (argv[i] != NULL && i < MAX_ARGS - 1)
@@ -97,15 +87,16 @@ int main(void)
         }
         argv[i] = NULL;
 
-        /* Find command path */
-        char *cmd_path = find_command_in_path(argv[0]);
+        /* Declare variables at top */
+        char *cmd_path;
+
+        cmd_path = find_command_in_path(argv[0]);
         if (cmd_path == NULL)
         {
             dprintf(STDERR_FILENO, "%s: command not found\n", argv[0]);
             continue;
         }
 
-        /* Fork and execute */
         pid = fork();
         if (pid == -1)
         {
@@ -115,15 +106,12 @@ int main(void)
 
         if (pid == 0)
         {
-            /* Child */
             execve(cmd_path, argv, environ);
-            /* If execve returns, error */
             perror("execve");
             exit(EXIT_FAILURE);
         }
         else
         {
-            /* Parent */
             waitpid(pid, &status, 0);
         }
     }
