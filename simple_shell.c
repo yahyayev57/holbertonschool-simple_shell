@@ -6,11 +6,6 @@
 
 extern char **environ;
 
-/**
- * main - Simple shell 0.1 entry point
- *
- * Return: Always 0 (Success)
- */
 int main(void)
 {
     char *line = NULL;
@@ -21,18 +16,21 @@ int main(void)
 
     while (1)
     {
-        printf("#cisfun$ ");
+        if (isatty(STDIN_FILENO))
+            printf("#cisfun$ ");
+
         read = getline(&line, &len, stdin);
-        if (read == -1) /* Handle EOF (Ctrl+D) */
+        if (read == -1)
         {
-            printf("\n");
+            if (isatty(STDIN_FILENO))
+                printf("\n");
             break;
         }
 
         if (line[read - 1] == '\n')
-            line[read - 1] = '\0'; /* Remove trailing newline */
+            line[read - 1] = '\0';
 
-        if (line[0] == '\0') /* Empty input */
+        if (line[0] == '\0')
             continue;
 
         args[0] = line;
@@ -48,7 +46,6 @@ int main(void)
 
         if (pid == 0)
         {
-            /* Child process */
             if (execve(args[0], args, environ) == -1)
             {
                 perror("./shell");
@@ -57,7 +54,6 @@ int main(void)
         }
         else
         {
-            /* Parent process waits */
             wait(NULL);
         }
     }
