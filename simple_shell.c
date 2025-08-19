@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sys/wait.h>
 
+#define MAX_ARGS 10
 extern char **environ;
 
 char *trim_spaces(char *str)
@@ -25,14 +26,29 @@ char *trim_spaces(char *str)
     return str;
 }
 
+int split_line(char *line, char **args)
+{
+    int i = 0;
+    char *token;
+
+    token = strtok(line, " \t\r\n");
+    while (token != NULL && i < MAX_ARGS - 1)
+    {
+        args[i++] = token;
+        token = strtok(NULL, " \t\r\n");
+    }
+    args[i] = NULL;
+    return i;
+}
+
 int main(void)
 {
     char *line = NULL;
     size_t len = 0;
     ssize_t read;
     pid_t pid;
-    char *args[2];
-    char *cmd;
+    char *args[MAX_ARGS];
+    int argc;
 
     while (1)
     {
@@ -47,13 +63,13 @@ int main(void)
             break;
         }
 
-        cmd = trim_spaces(line);
-
+        char *cmd = trim_spaces(line);
         if (cmd[0] == '\0')
             continue;
 
-        args[0] = cmd;
-        args[1] = NULL;
+        argc = split_line(cmd, args);
+        if (argc == 0)
+            continue;
 
         pid = fork();
         if (pid == -1)
