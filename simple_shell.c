@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -8,7 +7,7 @@
 extern char **environ;
 
 /**
- * main - Entry point for simple shell 0.1
+ * main - Simple shell 0.1 entry point
  *
  * Return: Always 0 (Success)
  */
@@ -31,12 +30,11 @@ int main(void)
         }
 
         if (line[read - 1] == '\n')
-            line[read - 1] = '\0'; /* Remove newline */
+            line[read - 1] = '\0'; /* Remove trailing newline */
 
-        if (line[0] == '\0')
-            continue; /* Empty command, reprompt */
+        if (line[0] == '\0') /* Empty input */
+            continue;
 
-        /* Prepare arguments for execve */
         args[0] = line;
         args[1] = NULL;
 
@@ -59,7 +57,7 @@ int main(void)
         }
         else
         {
-            /* Parent waits for child */
+            /* Parent process waits */
             wait(NULL);
         }
     }
