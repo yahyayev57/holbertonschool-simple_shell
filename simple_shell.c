@@ -41,10 +41,7 @@ char *find_command_in_path(char *command)
     char *token;
     char *full_path;
     size_t len;
-    int found;
-    char *dir;
 
-    found = 0;
     path_env = get_path_env();
     if (path_env == NULL)
         return NULL;
@@ -70,7 +67,6 @@ char *find_command_in_path(char *command)
 
         if (access(full_path, X_OK) == 0)
         {
-            found = 1;
             free(path_env_dup);
             return full_path; /* caller must free */
         }
