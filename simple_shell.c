@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
@@ -13,23 +15,25 @@ int main(void)
     char *token;
     pid_t pid;
     int status;
+    int i;
 
     while (1)
     {
         printf("#cisfun$ ");
-        if (!fgets(input, MAX_INPUT, stdin))
+        if (fgets(input, MAX_INPUT, stdin) == NULL)
         {
             printf("\n");
             break;
         }
 
-        input[strcspn(input, "\n")] = '\0';  // Remove newline
+        input[strcspn(input, "\n")] = '\0';  /* Remove newline */
 
-        int i = 0;
+        i = 0;
         token = strtok(input, " \t");
-        while (token && i < MAX_ARGS - 1)
+        while (token != NULL && i < MAX_ARGS - 1)
         {
-            args[i++] = token;
+            args[i] = token;
+            i++;
             token = strtok(NULL, " \t");
         }
         args[i] = NULL;
@@ -38,20 +42,22 @@ int main(void)
             continue;
 
         pid = fork();
+        if (pid == -1)
+        {
+            perror("fork");
+            continue;
+        }
         if (pid == 0)
         {
             execvp(args[0], args);
             perror("execvp");
             exit(EXIT_FAILURE);
         }
-        else if (pid > 0)
+        else
         {
             wait(&status);
         }
-        else
-        {
-            perror("fork");
-        }
     }
+
     return 0;
 }
