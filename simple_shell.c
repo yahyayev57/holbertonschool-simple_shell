@@ -14,9 +14,11 @@ int main(void)
 	char *argv[64];
 	pid_t pid;
 
-	while (1)
+		while (1)
 	{
-		printf(":) ");
+		if (isatty(STDIN_FILENO))
+			printf(":) ");
+
 		nread = getline(&line, &len, stdin);
 		if (nread == -1)
 			break;
@@ -52,6 +54,7 @@ int main(void)
 			free(cmd);
 		}
 	}
+
 
 	free(line);
 	return (0);
