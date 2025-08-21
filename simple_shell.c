@@ -13,7 +13,6 @@ int main(void)
 	ssize_t nread;
 	char *argv[64];
 	pid_t pid;
-	int i;
 
 	while (1)
 	{
@@ -57,3 +56,4 @@ int main(void)
 	free(line);
 	return (0);
 }
+
