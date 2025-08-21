@@ -3,169 +3,117 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/types.h>
-#include <fcntl.h>
-#include <errno.h>
-
-#define MAX_ARGS 64
-#define MAX_LINE 1024
 
 extern char **environ;
 
 /**
- * get_path_env - Gets the PATH environment variable without getenv
- * Return: pointer to PATH string, or NULL if not found
+ * find_command - search command in PATH
+ * @cmd: command to find
+ * Return: full path to command or NULL
  */
-char *get_path_env(void)
+char *find_command(char *cmd)
 {
-    int i;
-    char *path_prefix = "PATH=";
+	char *path = getenv("PATH");
+	char *path_copy = NULL, *token = NULL, *full_path = NULL;
+	size_t len;
 
-    for (i = 0; environ[i] != NULL; i++)
-    {
-        if (strncmp(environ[i], path_prefix, 5) == 0)
-            return environ[i] + 5;
-    }
-    return NULL;
+	if (!path)
+		return (NULL);
+
+	path_copy = strdup(path);
+	if (!path_copy)
+		return (NULL);
+
+	token = strtok(path_copy, ":");
+	while (token)
+	{
+		len = strlen(token) + strlen(cmd) + 2;
+		full_path = malloc(len);
+		if (!full_path)
+		{
+			free(path_copy);
+			return (NULL);
+		}
+		snprintf(full_path, len, "%s/%s", token, cmd);
+		if (access(full_path, X_OK) == 0)
+		{
+			free(path_copy);
+			return (full_path); /* FOUND ✅ */
+		}
+		free(full_path);
+		token = strtok(NULL, ":");
+	}
+	free(path_copy);
+	return (NULL); /* NOT FOUND ❌ */
 }
 
 /**
- * find_command_in_path - Finds the full path of a command in PATH dirs
- * @command: command to find
- * Return: full path string (malloced) or NULL if not found
- */
-char *find_command_in_path(char *command)
-{
-    char *path_env;
-    char *path_env_dup;
-    char *token;
-    char *full_path;
-    size_t len;
-
-    path_env = get_path_env();
-    if (path_env == NULL)
-        return NULL;
-
-    path_env_dup = strdup(path_env);
-    if (path_env_dup == NULL)
-        return NULL;
-
-    token = strtok(path_env_dup, ":");
-    while (token != NULL)
-    {
-        len = strlen(token) + strlen(command) + 2; /* '/' + '\0' */
-        full_path = malloc(len);
-        if (full_path == NULL)
-        {
-            free(path_env_dup);
-            return NULL;
-        }
-
-        strcpy(full_path, token);
-        strcat(full_path, "/");
-        strcat(full_path, command);
-
-        if (access(full_path, X_OK) == 0)
-        {
-            free(path_env_dup);
-            return full_path; /* caller must free */
-        }
-
-        free(full_path);
-        token = strtok(NULL, ":");
-    }
-
-    free(path_env_dup);
-    return NULL;
-}
-
-/**
- * main - Simple shell main loop
- * Return: 0 on success
+ * main - basic shell loop
+ * Return: 0 always
  */
 int main(void)
 {
-    char line[MAX_LINE];
-    char *argv[MAX_ARGS];
-    char *token;
-    char *cmd_path;
-    pid_t pid;
-    int status;
-    int i;
+	char *line = NULL, *argv[64], *cmd = NULL;
+	size_t len = 0;
+	ssize_t nread;
+	pid_t pid;
+	int i;
 
-    while (1)
-    {
-        /* Print prompt */
-        write(STDOUT_FILENO, "#cisfun$ ", 8);
+	while (1)
+	{
+		printf(":) ");
+		nread = getline(&line, &len, stdin);
+		if (nread == -1)
+			break;
 
-        /* Read input */
-        if (fgets(line, MAX_LINE, stdin) == NULL)
-            break;
+		line[strcspn(line, "\n")] = '\0'; /* remove \n */
 
-        /* Remove newline */
-        line[strcspn(line, "\n")] = '\0';
+		/* Tokenize line */
+		i = 0;
+		argv[i] = strtok(line, " ");
+		while (argv[i])
+		{
+			i++;
+			argv[i] = strtok(NULL, " ");
+		}
+		if (!argv[0])
+			continue;
 
-        /* Tokenize input */
-        i = 0;
-        token = strtok(line, " ");
-        while (token != NULL && i < MAX_ARGS - 1)
-        {
-            argv[i] = token;
-            i++;
-            token = strtok(NULL, " ");
-        }
-        argv[i] = NULL;
+		/* Handle PATH or full path */
+		if (argv[0][0] == '/' || argv[0][0] == '.')
+		{
+			if (access(argv[0], X_OK) == 0)
+				cmd = strdup(argv[0]);
+		}
+		else
+		{
+			cmd = find_command(argv[0]);
+		}
 
-        /* Empty input, continue */
-        if (argv[0] == NULL)
-            continue;
+		if (!cmd)
+		{
+			fprintf(stderr, "%s: command not found\n", argv[0]);
+			continue;
+		}
 
-        /* Built-in exit */
-        if (strcmp(argv[0], "exit") == 0)
-            break;
-
-        /* Find command in PATH or check if absolute/path */
-        if (argv[0][0] == '/' || argv[0][0] == '.')
-        {
-            cmd_path = argv[0];
-        }
-        else
-        {
-            cmd_path = find_command_in_path(argv[0]);
-            if (cmd_path == NULL)
-            {
-                write(STDERR_FILENO, argv[0], strlen(argv[0]));
-                write(STDERR_FILENO, ": command not found\n", 20);
-                continue;
-            }
-        }
-
-        /* Fork and exec */
-        pid = fork();
-        if (pid == -1)
-        {
-            perror("fork");
-            if (cmd_path != argv[0])
-                free(cmd_path);
-            continue;
-        }
-
-        if (pid == 0)
-        {
-            /* Child process */
-            execve(cmd_path, argv, environ);
-            /* If execve fails */
-            perror("execve");
-            exit(EXIT_FAILURE);
-        }
-        else
-        {
-            /* Parent waits */
-            wait(&status);
-            if (cmd_path != argv[0])
-                free(cmd_path);
-        }
-    }
-
-    return 0;
+		pid = fork();
+		if (pid == 0)
+		{
+			execve(cmd, argv, environ);
+			perror("execve");
+			exit(EXIT_FAILURE);
+		}
+		else if (pid > 0)
+		{
+			wait(NULL);
+			free(cmd);
+		}
+		else
+		{
+			perror("fork");
+			free(cmd);
+		}
+	}
+	free(line);
+	return (0);
 }
