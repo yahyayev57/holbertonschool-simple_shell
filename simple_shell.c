@@ -1,62 +1,88 @@
-/* simple_shell.c */
-
 #include "shell.h"
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 /**
- * main - main loop of the simple shell
- * Return: 0 on success
+ * main - Simple shell 0.3
+ *
+ * Return: Always 0
  */
 int main(void)
 {
-	char *line = NULL, *cmd = NULL;
-	size_t len = 0;
-	ssize_t nread;
-	char *argv[64];
-	pid_t pid;
+    char *line = NULL;
+    size_t len = 0;
+    ssize_t nread;
+    char **argv;
+    char *cmd;
 
-		while (1)
-	{
-		if (isatty(STDIN_FILENO))
-			printf(":) ");
+    while (1)
+    {
+        if (isatty(STDIN_FILENO))
+            write(STDOUT_FILENO, "$ ", 2);
 
-		nread = getline(&line, &len, stdin);
-		if (nread == -1)
-			break;
+        nread = getline(&line, &len, stdin);
+        if (nread == -1)
+            break;
 
-		line[strcspn(line, "\n")] = '\0';
+        if (line[nread - 1] == '\n')
+            line[nread - 1] = '\0';
 
-		tokenize_input(line, argv);
-		if (!argv[0])
-			continue;
+        argv = tokenize(line);
+        if (!argv || !argv[0])
+        {
+            free(argv);
+            continue;
+        }
 
-		cmd = resolve_path(argv[0]);
-		if (!cmd)
-		{
-			fprintf(stderr, "%s: command not found\n", argv[0]);
-			continue;
-		}
+        if (strcmp(argv[0], "exit") == 0)
+        {
+            free(argv);
+            break;
+        }
 
-		pid = fork();
-		if (pid == 0)
-		{
-			execve(cmd, argv, environ);
-			perror("execve");
-			exit(EXIT_FAILURE);
-		}
-		else if (pid > 0)
-		{
-			wait(NULL);
-			free(cmd);
-		}
-		else
-		{
-			perror("fork");
-			free(cmd);
-		}
-	}
+        if (strcmp(argv[0], "env") == 0)
+        {
+            extern char **environ;
+            for (int j = 0; environ[j]; j++)
+                write(STDOUT_FILENO, environ[j], strlen(environ[j])), write(STDOUT_FILENO, "\n", 1);
+            free(argv);
+            continue;
+        }
 
+        if (argv[0][0] == '/' || argv[0][0] == '.')
+        {
+            cmd = strdup(argv[0]);
+        }
+        else
+        {
+            cmd = resolve_path(argv[0]);
+        }
 
-	free(line);
-	return (0);
+        if (!cmd)
+        {
+            dprintf(STDERR_FILENO, "%s: command not found\n", argv[0]);
+            free(argv);
+            continue;
+        }
+
+        if (fork() == 0)
+        {
+            execve(cmd, argv, environ);
+            perror("execve");
+            exit(EXIT_FAILURE);
+        }
+        else
+        {
+            int status;
+            wait(&status);
+        }
+
+        free(cmd);
+        free(argv);
+    }
+
+    free(line);
+    return 0;
 }
-
