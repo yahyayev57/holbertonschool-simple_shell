@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		execute(args, argv);
+		execute(args, argv[0]); // ✅ RIGHT: passing char *
 
 		free(line);
 		free(args);
