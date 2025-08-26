@@ -26,7 +26,7 @@ int main(void)
         if (nread == -1)
             break;
 
-        line[nread - 1] = '\0';  // Remove newline
+        line[nread - 1] = '\0';  /* Remove newline */
         argv = tokenize(line);
         if (!argv || !argv[0])
             continue;
