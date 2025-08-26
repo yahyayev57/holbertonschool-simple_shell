@@ -1,33 +1,23 @@
 #include "main.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
 
+extern char **environ;
 
 char *find_path(char *command)
 {
     char *path = getenv("PATH");
-    char *dir, *full_path;
-    size_t len;
+    char *dir;
+    char full_path[1024];
 
     if (access(command, X_OK) == 0)
-        return command;
+        return strdup(command);
 
     dir = strtok(path, ":");
-    while (dir)
+    while (dir != NULL)
     {
-        len = strlen(dir) + strlen(command) + 2;
-        full_path = malloc(len);
-        if (!full_path)
-            return NULL;
-
-        snprintf(full_path, len, "%s/%s", dir, command);
-
+        snprintf(full_path, sizeof(full_path), "%s/%s", dir, command);
         if (access(full_path, X_OK) == 0)
-            return full_path;
+            return strdup(full_path);
 
-        free(full_path);
         dir = strtok(NULL, ":");
     }
 
