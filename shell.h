@@ -14,6 +14,6 @@ extern char **environ;
 char *read_line(void);
 char **split_line(char *line);
 char *find_path(char *cmd);
-void execute(char **args, char *argv);
+void execute(char **args, char *program_name);
 
 #endif
