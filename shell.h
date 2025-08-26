@@ -3,14 +3,17 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <sys/types.h>
+#include <unistd.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 extern char **environ;
 
-char *resolve_path(char *cmd);
-void tokenize_input(char *line, char **argv);
+char *read_line(void);
+char **split_line(char *line);
+char *find_path(char *cmd);
+void execute(char **args, char *argv);
 
 #endif
