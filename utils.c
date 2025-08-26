@@ -1,15 +1,15 @@
 #include "shell.h"
 
 /**
- * read_line - Read a line from stdin
+ * read_line - Reads a line from stdin
  * Return: pointer to the line
  */
 char *read_line(void)
 {
 	char *line = NULL;
-	size_t size = 0;
+	size_t len = 0;
 
-	if (getline(&line, &size, stdin) == -1)
+	if (getline(&line, &len, stdin) == -1)
 	{
 		free(line);
 		return (NULL);
@@ -19,12 +19,13 @@ char *read_line(void)
 
 /**
  * split_line - Tokenize the input line
- * @line: the input string
- * Return: NULL-terminated array of strings
+ * @line: input string
+ * Return: array of strings
  */
 char **split_line(char *line)
 {
-	char *token = NULL, **tokens = malloc(64 * sizeof(char *));
+	char *token = NULL;
+	char **tokens = malloc(64 * sizeof(char *));
 	int i = 0;
 
 	if (!tokens)
