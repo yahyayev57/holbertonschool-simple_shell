@@ -1,18 +1,22 @@
-#include "shell.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-/**
- * tokenize_input - Splits a line into arguments
- * @line: Input line
- * @argv: Array to fill with arguments
- */
-void tokenize_input(char *line, char **argv)
+char **tokenize(char *line)
 {
-	int i = 0;
+    char **tokens = malloc(64 * sizeof(char *));
+    char *token;
+    int i = 0;
 
-	argv[i] = strtok(line, " ");
-	while (argv[i])
-	{
-		i++;
-		argv[i] = strtok(NULL, " ");
-	}
+    if (!tokens)
+        return NULL;
+
+    token = strtok(line, " ");
+    while (token)
+    {
+        tokens[i++] = token;
+        token = strtok(NULL, " ");
+    }
+    tokens[i] = NULL;
+    return tokens;
 }
