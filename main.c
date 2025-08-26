@@ -1,10 +1,10 @@
 #include "shell.h"
 
 /**
- * main - Entry point for the shell
+ * main - Entry point
  * @argc: argument count
  * @argv: argument vector
- * Return: 0 on success
+ * Return: 0 always
  */
 int main(int argc, char **argv)
 {
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 			continue;
 		}
 
-		execute(args, argv[0]); // ✅ RIGHT: passing char *
+		execute(args, argv[0]); /* fixed: passing char * */
 
 		free(line);
 		free(args);
