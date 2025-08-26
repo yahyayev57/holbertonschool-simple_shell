@@ -1,11 +1,9 @@
-#include <stdio.h>
+#include "main.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-extern char **environ;
-
-char *resolve_path(char *command)
+char *find_path(char *command)
 {
     char *path = getenv("PATH");
     char *dir, *full_path;
