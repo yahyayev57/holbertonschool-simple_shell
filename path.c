@@ -1,7 +1,9 @@
 #include "main.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 
 char *find_path(char *command)
 {
