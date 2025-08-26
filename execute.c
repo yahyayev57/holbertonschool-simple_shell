@@ -5,7 +5,7 @@
  * @args: argument list
  * @argv: program name for error messages
  */
-void execute(char **args, char *argv)
+void execute(char **args, char *program_name);
 {
 	pid_t pid;
 	char *cmd = args[0], *path = NULL;
