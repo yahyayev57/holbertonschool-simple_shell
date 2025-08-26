@@ -1,60 +1,26 @@
 #include "shell.h"
 
 /**
- * resolve_path - Finds the full path of a command using PATH
- * @cmd: Command to search for
- * Return: Full path string if found, else NULL
+ * find_path - Search command in PATH
+ * @cmd: command name
+ * Return: full path if found, else NULL
  */
-char *resolve_path(char *cmd)
+char *find_path(char *cmd)
 {
-	char *path = NULL, *copy, *token, *full_path;
-	int i = 0;
-	size_t len;
+	char *path = getenv("PATH");
+	char *token = NULL, *full = malloc(1024);
 
-	/* Find PATH manually in environ */
-	while (environ[i])
-	{
-		if (strncmp(environ[i], "PATH=", 5) == 0)
-		{
-			path = environ[i] + 5;
-			break;
-		}
-		i++;
-	}
-	if (!path)
+	if (!path || !full)
 		return (NULL);
 
-	/* Absolute or relative path case */
-	if (cmd[0] == '/' || cmd[0] == '.')
-	{
-		if (access(cmd, X_OK) == 0)
-			return (strdup(cmd));
-		return (NULL);
-	}
-
-	copy = strdup(path);
-	if (!copy)
-		return (NULL);
-
-	token = strtok(copy, ":");
+	token = strtok(path, ":");
 	while (token)
 	{
-		len = strlen(token) + strlen(cmd) + 2;
-		full_path = malloc(len);
-		if (!full_path)
-		{
-			free(copy);
-			return (NULL);
-		}
-		snprintf(full_path, len, "%s/%s", token, cmd);
-		if (access(full_path, X_OK) == 0)
-		{
-			free(copy);
-			return (full_path);
-		}
-		free(full_path);
+		snprintf(full, 1024, "%s/%s", token, cmd);
+		if (access(full, X_OK) == 0)
+			return (full);
 		token = strtok(NULL, ":");
 	}
-	free(copy);
+	free(full);
 	return (NULL);
 }
