@@ -1,26 +1,26 @@
 #include "shell.h"
 
 /**
- * find_path - Search command in PATH
+ * find_path - Looks for command in PATH
  * @cmd: command name
- * Return: full path if found, else NULL
+ * Return: full path or NULL
  */
 char *find_path(char *cmd)
 {
 	char *path = getenv("PATH");
-	char *token = NULL, *full = malloc(1024);
+	char *token, *full;
+	static char buffer[1024];
 
-	if (!path || !full)
+	if (!path)
 		return (NULL);
 
 	token = strtok(path, ":");
 	while (token)
 	{
-		snprintf(full, 1024, "%s/%s", token, cmd);
-		if (access(full, X_OK) == 0)
-			return (full);
+		snprintf(buffer, sizeof(buffer), "%s/%s", token, cmd);
+		if (access(buffer, X_OK) == 0)
+			return (buffer);
 		token = strtok(NULL, ":");
 	}
-	free(full);
 	return (NULL);
 }
